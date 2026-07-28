@@ -1,0 +1,7 @@
+PROJECT_NAME = "Neuro-Symbolic XAI CDSS"
+
+MODEL_NAME = "Random Forest"
+
+MODEL_VERSION = "1.0"
+
+SHAP_BACKGROUND_SIZE = 100
