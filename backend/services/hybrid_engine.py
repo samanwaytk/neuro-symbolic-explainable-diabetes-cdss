@@ -2,6 +2,8 @@
 import pandas as pd
 
 from backend.services.rule_engine import evaluate_rules
+from backend.services.llm_service import generate_explanation
+from backend.explainability.shap_explainer import generate_shap_explanation
 
 
 from backend.core.model_loader import load_model
@@ -25,9 +27,14 @@ def hybrid_prediction(patient_data):
 
     df = pd.DataFrame([model_input])
 
-    prediction = model.predict(df)[0]
+    shap_explanation = generate_shap_explanation(
+        model,
+        df
+    )
 
-    probability = model.predict_proba(df)[0][1]
+    prediction = int(model.predict(df)[0])
+
+    probability = float(model.predict_proba(df)[0][1])
 
     # -------------------------
     # Rule Engine
@@ -56,14 +63,27 @@ def hybrid_prediction(patient_data):
     else:
         final_decision = "Low Diabetes Risk"
 
+
+    prediction_result = {
+    "final_decision": final_decision,
+    "probability": probability,
+    "reasons": reasons
+    }
+
+    llm_explanation = generate_explanation(
+    patient_data,
+    prediction_result
+    )
+    print(shap_explanation)
+   
     return {
     "patient_data": patient_data,
-
-    "ml_prediction": int(prediction),
-    "probability": round(float(probability), 3),
-
+    "ml_prediction": prediction,
+    "probability": probability,
     "rule_risk": rule_risk,
     "final_decision": final_decision,
-
-    "reasons": reasons
+    "reasons": reasons,
+    "llm_explanation": llm_explanation,
+    "shap_explanation": shap_explanation
 }
+    

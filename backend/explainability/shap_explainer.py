@@ -1,41 +1,38 @@
-import joblib
-import pandas as pd
 import shap
+import pandas as pd
 
-# Load trained model
-model = joblib.load("models/diabetes_model.pkl")
 
-# Load processed dataset
-df = pd.read_csv("data/processed/diabetes_processed.csv")
+def generate_shap_explanation(model, patient_df):
 
-# Separate features
-X = df.drop("diabetes", axis=1)
+    explainer = shap.Explainer(model)
 
-# Create SHAP Explainer
-explainer = shap.Explainer(model)
+    shap_values = explainer(patient_df)
 
-# Explain first patient
-shap_values = explainer(X.iloc[[0]])
 
-print("=" * 60)
-print("PATIENT EXPLANATION")
-print("=" * 60)
+    values = shap_values.values[0]
 
-prediction = model.predict(X.iloc[[0]])[0]
 
-print(f"\nPrediction: {prediction}")
+    # For binary classification
+    if len(values.shape) == 2:
+        values = values[:, 1]
 
-# SHAP values for diabetes class (class 1)
-values = shap_values.values[0, :, 1]
 
-print("\nFeature Contributions\n")
+    explanation = {}
 
-for feature, value in zip(X.columns, values):
 
-    direction = (
-        "Increased Diabetes Risk"
-        if value > 0
-        else "Reduced Diabetes Risk"
-    )
+    for feature, value in zip(
+        patient_df.columns,
+        values
+    ):
 
-    print(f"{feature:22} {value:10.4f}   {direction}")
+        explanation[feature] = {
+            "impact": float(value),
+
+            "direction":
+                "Increased Diabetes Risk"
+                if value > 0
+                else "Reduced Diabetes Risk"
+        }
+
+
+    return explanation
